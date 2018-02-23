@@ -1,0 +1,16 @@
+[
+{
+  "modid": "assembly",
+  "name": "Assembly",
+  "description": "a mod for making things",
+  "version": "${version}",
+  "mcversion": "${mcversion}",
+  "url": "",
+  "updateUrl": "",
+  "authorList": ["Hobo Joe"],
+  "credits": "Everyone who made mods like this in the past, and all the great open source mods I was able to use to learn how to do everything",
+  "logoFile": "",
+  "screenshots": [],
+  "dependencies": []
+}
+]

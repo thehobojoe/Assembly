@@ -1,0 +1,108 @@
+buildscript {
+    ext.kotlin_version = '1.2.21'
+    repositories {
+        jcenter()
+        maven { url = "http://files.minecraftforge.net/maven" }
+    }
+    dependencies {
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+        classpath 'net.minecraftforge.gradle:ForgeGradle:2.3-SNAPSHOT'
+    }
+}
+apply plugin: 'net.minecraftforge.gradle.forge'
+apply plugin: 'kotlin'
+//Only edit below this line, the above code adds and enables the necessary things for Forge to be setup.
+
+
+version = "1.0"
+group = "com.hobojoe.assembly" // http://maven.apache.org/guides/mini/guide-naming-conventions.html
+archivesBaseName = "Assembly"
+
+sourceCompatibility = targetCompatibility = '1.8' // Need this here so eclipse task generates correctly.
+compileJava {
+    sourceCompatibility = targetCompatibility = '1.8'
+}
+
+compileKotlin {
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
+}
+
+minecraft {
+    version = "1.12.2-14.23.2.2619"
+    runDir = "run"
+    
+    // the mappings can be changed at any time, and must be in the following format.
+    // snapshot_YYYYMMDD   snapshot are built nightly.
+    // stable_#            stables are built at the discretion of the MCP team.
+    // Use non-default mappings at your own risk. they may not always work.
+    // simply re-run your setup task after changing the mappings to update your workspace.
+    mappings = "snapshot_20171003"
+    // makeObfSourceJar = false // an Srg named sources jar is made by default. uncomment this to disable.
+}
+
+repositories {
+    jcenter()
+    maven {
+        url "http://maven.shadowfacts.net/"
+    }
+
+    maven {
+        name = "JEI repo"
+        url "http://dvs1.progwml6.com/files/maven"
+    }
+
+    maven { // TheOneProbe
+        name 'tterrag maven'
+        url "http://maven.tterrag.com/"
+    }
+
+    maven {
+        name = "CoFH Maven"
+        url = "http://maven.covers1624.net"
+    }
+}
+
+
+def minecraft_version = '1.12.2'
+def jei_version = '4.8.5.157'
+def top_version = '1.12-1.4.18-10'
+
+
+dependencies {
+    compile group: "net.shadowfacts", name: "Forgelin", version: "1.5.0"
+
+    compileOnly "mezz.jei:jei_1.12.2:${jei_version}:api"
+    compile "mcjty.theoneprobe:TheOneProbe-1.12:${top_version}"
+    compile "cofh:RedstoneFlux:1.12-2.0.1.2:deobf"
+
+    runtime "mezz.jei:jei_1.12.2:${jei_version}"
+
+    compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+    compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
+}
+
+processResources {
+    // this will ensure that this task is redone when the versions change.
+    inputs.property "version", project.version
+    inputs.property "mcversion", project.minecraft.version
+
+    // replace stuff in mcmod.info, nothing else
+    from(sourceSets.main.resources.srcDirs) {
+        include 'mcmod.info'
+                
+        // replace version and mcversion
+        expand 'version':project.version, 'mcversion':project.minecraft.version
+    }
+        
+    // copy everything else except the mcmod.info
+    from(sourceSets.main.resources.srcDirs) {
+        exclude 'mcmod.info'
+    }
+}
+compileTestKotlin {
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
+}

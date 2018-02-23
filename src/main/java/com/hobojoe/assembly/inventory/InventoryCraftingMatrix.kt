@@ -53,7 +53,7 @@ class InventoryCraftingMatrix : InventoryCrafting(null, 3, 3) {
     }
 
     override fun getName() = "crafting.inventory"
-    override fun getInventoryStackLimit() = 64
+    override fun getInventoryStackLimit() = 1
 
     override fun getSizeInventory(): Int {
         return 9
@@ -89,8 +89,6 @@ class InventoryCraftingMatrix : InventoryCrafting(null, 3, 3) {
             return null
         }
     }
-
-
 
 
 

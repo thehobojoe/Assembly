@@ -8,11 +8,15 @@ import net.minecraft.inventory.InventoryCraftResult
 import net.minecraft.inventory.Slot
 import net.minecraft.item.ItemStack
 import net.minecraft.item.crafting.CraftingManager
+import net.minecraft.item.crafting.IRecipe
+import net.minecraft.item.crafting.Ingredient
 import net.minecraft.world.World
 import net.minecraftforge.items.ItemStackHandler
 import net.minecraftforge.items.SlotItemHandler
 
-class ContainerAssembler(private val player: EntityPlayer, val assembler: TileEntityAssembler) : Container() {
+class ContainerAssembler(private val player: EntityPlayer, val assembler: TileEntityAssembler)
+    : Container(), SlotCraftingResult.OnCraft {
+
 
     private val craftMatrix = assembler.craftMatrix
     private val result = assembler.result
@@ -26,7 +30,9 @@ class ContainerAssembler(private val player: EntityPlayer, val assembler: TileEn
 
         // crafting grid result 80x75
         yBase = 75 - yOffset
-        addSlotToContainer(SlotCraftingResult(player, craftMatrix, result, 0, 80, yBase))
+        val slotResult = SlotCraftingResult(player, craftMatrix, result, 0, 80, yBase)
+        slotResult.craftListener = this
+        addSlotToContainer(slotResult)
 
         // crafting grid 62x13
         for(i in 0 until 3) {
@@ -66,9 +72,52 @@ class ContainerAssembler(private val player: EntityPlayer, val assembler: TileEn
         }
     }
 
+    override fun tookResult() : Boolean {
+        println("took result")
+
+        val invCopy = List(27, { i ->
+            assemblerInv.getStackInSlot(i)
+        })
+        val affectedStacks = ArrayList<Int>()
+
+        var hasMatch = false
+        recipe?.let { recipe ->
+
+            ingred@ for (i in 0 until recipe.size) {
+                val ingredient = recipe[i]
+                for (stack in ingredient.matchingStacks) {
+                    for(j in 0 until invCopy.size) {
+                        val invStack = invCopy[j]
+                        if (invStack.isItemEqual(stack)) {
+                            println("recipe item match: ${stack.count} of ${stack.unlocalizedName}")
+                            hasMatch = true
+                            invCopy[j].shrink(1)
+                            affectedStacks.add(j)
+                            continue@ingred
+                        }
+                    }
+                    hasMatch = false
+                }
+            }
+        }
+
+        println("HAS MATCH: " + hasMatch)
+        if(hasMatch) {
+            for(index in affectedStacks) {
+                assemblerInv.setStackInSlot(index, invCopy[index])
+            }
+            //onCraftMatrixChanged(craftMatrix)
+        }
+
+        return hasMatch
+    }
+
+    private var recipe: List<Ingredient>? = null
 
     override fun onCraftMatrixChanged(inventoryIn: IInventory?) {
-        val output = CraftingManager.findMatchingRecipe(craftMatrix, player.world)?.recipeOutput ?: ItemStack.EMPTY
+        val output = CraftingManager.findMatchingResult(craftMatrix, player.world) ?: ItemStack.EMPTY
+        recipe = CraftingManager.findMatchingRecipe(craftMatrix, player.world)?.ingredients
+
         result.setInventorySlotContents(0, output)
     }
 
@@ -79,6 +128,7 @@ class ContainerAssembler(private val player: EntityPlayer, val assembler: TileEn
         val slot = inventorySlots[index]
 
         if(slot != null && slot.hasStack) {
+
             val slotStack = slot.stack
             stack = slotStack.copy()
             val containerSize = inventorySlots.size - (playerIn?.inventory?.mainInventory?.size ?: 0)

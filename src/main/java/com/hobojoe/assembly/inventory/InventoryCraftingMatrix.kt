@@ -11,7 +11,7 @@ import net.minecraft.nbt.NBTTagList
 
 class InventoryCraftingMatrix : InventoryCrafting(null, 3, 3) {
 
-    private var inventory = NonNullList.withSize(9, ItemStack.EMPTY)
+    var inventory = NonNullList.withSize(9, ItemStack.EMPTY)
     lateinit var eventHandler: Container
 
 
@@ -20,9 +20,9 @@ class InventoryCraftingMatrix : InventoryCrafting(null, 3, 3) {
      * @param index - the slot to check
      * @param stack - the itemstack to check
      */
-    override fun setInventorySlotContents(index: Int, stack: ItemStack?) {
+    override fun setInventorySlotContents(index: Int, stack: ItemStack) {
         inventory[index] = stack
-        if(stack?.isEmpty == false && stack.count > inventoryStackLimit) {
+        if(!stack.isEmpty && stack.count > inventoryStackLimit) {
             stack.count = inventoryStackLimit
         }
 
@@ -48,8 +48,9 @@ class InventoryCraftingMatrix : InventoryCrafting(null, 3, 3) {
      * Returns the stack in slot i
      * @param slotIndex - the slot to check
      */
-    override fun getStackInSlot(slotIndex: Int): ItemStack? {
-        return if (slotIndex >= this.sizeInventory) null else this.inventory[slotIndex]
+    override fun getStackInSlot(slotIndex: Int): ItemStack {
+        if (slotIndex >= this.sizeInventory) throw IndexOutOfBoundsException("Tried to get matrix slot out of bounds")
+        return this.inventory[slotIndex]
     }
 
     override fun getName() = "crafting.inventory"

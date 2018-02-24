@@ -73,58 +73,12 @@ class ContainerAssembler(private val player: EntityPlayer, val assembler: TileEn
     }
 
     override fun tookResult() : Boolean {
-        println("took result")
 
-        val invCopy = List(27, { i ->
-            assemblerInv.getStackInSlot(i)
-        })
-        val affectedStacks = ArrayList<Int>()
-        val affectedMatrixStacks = ArrayList<Int>()
-
-        var hasMatch = false
-        recipe?.let { recipe ->
-
-            ingred@ for (i in 0 until recipe.size) {
-                val ingredient = recipe[i]
-                for (stack in ingredient.matchingStacks) {
-                    for(j in 0 until invCopy.size) {
-                        val invStack = invCopy[j]
-                        if (invStack.isItemEqual(stack)) {
-                            println("recipe item match: ${stack.unlocalizedName}")
-                            hasMatch = true
-                            invCopy[j].shrink(1)
-                            //check if crafting grid has this
-                            swap@ for(i in 0 until craftMatrix.sizeInventory) {
-                                if(affectedMatrixStacks.contains(i)) continue
-                                val gridStack = craftMatrix.getStackInSlot(i)
-                                for(validInput in ingredient.matchingStacks) {
-                                    if(gridStack?.isItemEqual(validInput) == true) {
-                                        println("found match in grid, altering slot")
-                                        craftMatrix.setInventorySlotContents(i, stack)
-                                        affectedMatrixStacks.add(i)
-                                        break@swap
-                                    }
-                                }
-
-                            }
-                            affectedStacks.add(j)
-                            continue@ingred
-                        }
-                    }
-                    hasMatch = false
-                }
-            }
+        recipe?.let {
+            val handler = CraftHandler(it, assemblerInv, craftMatrix)
+            return handler.craft()
         }
-
-        println("HAS MATCH: " + hasMatch)
-        if(hasMatch) {
-            for(index in affectedStacks) {
-                assemblerInv.setStackInSlot(index, invCopy[index])
-            }
-            //onCraftMatrixChanged(craftMatrix)
-        }
-
-        return hasMatch
+        return false
     }
 
     private var recipe: List<Ingredient>? = null
@@ -132,7 +86,6 @@ class ContainerAssembler(private val player: EntityPlayer, val assembler: TileEn
     override fun onCraftMatrixChanged(inventoryIn: IInventory?) {
         val output = CraftingManager.findMatchingResult(craftMatrix, player.world) ?: ItemStack.EMPTY
         recipe = CraftingManager.findMatchingRecipe(craftMatrix, player.world)?.ingredients
-
 
         result.setInventorySlotContents(0, output)
     }
@@ -143,7 +96,7 @@ class ContainerAssembler(private val player: EntityPlayer, val assembler: TileEn
         var stack = ItemStack.EMPTY
         val slot = inventorySlots[index]
 
-        if(slot != null && slot.hasStack) {
+        if(slot.hasStack) {
 
             val slotStack = slot.stack
             stack = slotStack.copy()

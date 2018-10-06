@@ -63,11 +63,10 @@ class CraftHandler(private val recipe: List<Ingredient>,
 
     private fun hasInexactIngredients() : Boolean {
 
-
         var hasMatch = false
         // iterate through each ingredient
         recipe.forEach recipe@ { ingredient ->
-            println("checking ingredient")
+            //println("checking ingredient")
             // iterate through inventory to find valid matches
             for(i in 0 until copy2.size) {
                 val stack = copy2[i]

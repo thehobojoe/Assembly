@@ -16,9 +16,12 @@ class ContainerAssembler(private val player: EntityPlayer, val assembler: TileEn
     : Container(), SlotCraftingResult.OnCraft {
 
 
-    private val craftMatrix = assembler.craftMatrix
+    val craftMatrix = assembler.craftMatrix
     private val result = assembler.result
     val assemblerInv = assembler.inventory
+    private val craftHandler = CraftHandler(assemblerInv)
+
+    private lateinit var slotResult: SlotCraftingResult
 
     init {
         craftMatrix.eventHandler = this
@@ -28,7 +31,7 @@ class ContainerAssembler(private val player: EntityPlayer, val assembler: TileEn
 
         // crafting grid result 80x75
         yBase = 75 - yOffset
-        val slotResult = SlotCraftingResult(player, craftMatrix, result, 0, 80, yBase)
+        slotResult = SlotCraftingResult(player, craftMatrix, result, 0, 80, yBase)
         slotResult.craftListener = this
         addSlotToContainer(slotResult)
 
@@ -71,16 +74,34 @@ class ContainerAssembler(private val player: EntityPlayer, val assembler: TileEn
             //println("adding hotbar slot at index: $c")
             addSlotToContainer(Slot(player.inventory, c, 8 + c * 18, yBase))
         }
+
+
+        assemblerInv.inventoryListener = {
+            updateInventory()
+        }
+    }
+
+    private fun updateInventory() {
+        recipe?.let {
+            craftHandler.inventory = assemblerInv
+            craftHandler.calculateMatches(it)
+            slotResult.isValid = hasIngredients()
+            return
+        }
+        craftHandler.clearMatches()
     }
 
     override fun tookResult() : Boolean {
 
         recipe?.let {
-            val handler = CraftHandler(it, assemblerInv, craftMatrix)
-            return handler.craft()
+            return craftHandler.craft(it)
         }
         return false
     }
+
+    fun hasIngredients() = craftHandler.hasIngredients()
+    fun getMatches() = craftHandler.getMatches()
+
 
     private var recipe: List<Ingredient>? = null
 
@@ -90,6 +111,8 @@ class ContainerAssembler(private val player: EntityPlayer, val assembler: TileEn
         recipe = CraftingManager.findMatchingRecipe(craftMatrix, player.world)?.ingredients
 
         result.setInventorySlotContents(0, output)
+
+        updateInventory()
     }
 
     override fun canInteractWith(playerIn: EntityPlayer) = true
@@ -99,14 +122,14 @@ class ContainerAssembler(private val player: EntityPlayer, val assembler: TileEn
 
         val slot = if (slotId < 0) null else this.inventorySlots[slotId]
         if (slot is SlotGhost) {
+            val hand = player.inventory.itemStack
             if (dragType == 2) {
                 slot.putStack(ItemStack.EMPTY)
             } else {
-                slot.putStack(if (player.inventory.itemStack.isEmpty) ItemStack.EMPTY else player.inventory.itemStack.copy())
+                slot.putStack(if (hand.isEmpty) ItemStack.EMPTY else hand.copy())
             }
             return player.inventory.itemStack
         }
-
         return super.slotClick(slotId, dragType, clickTypeIn, player)
     }
 

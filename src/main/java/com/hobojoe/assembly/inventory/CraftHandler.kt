@@ -4,105 +4,81 @@ import net.minecraft.item.ItemStack
 import net.minecraft.item.crafting.Ingredient
 import net.minecraftforge.items.ItemStackHandler
 
-class CraftHandler(private val recipe: List<Ingredient>,
-                   private val inventory: ItemStackHandler,
-                   private val matrix: InventoryCraftingMatrix) {
+class CraftHandler(var inventory: ItemStackHandler) {
 
-    private var copy1 = getInventoryClone()
-    private var copy2 = getInventoryClone()
+    private var copy = getInventoryClone()
+    private var matches: BooleanArray = BooleanArray(0)
     private val affectedStacks = ArrayList<Int>()
-    private val affectedMatrixStacks = ArrayList<Int>()
 
 
-    fun craft() : Boolean {
+    fun craft(recipe: List<Ingredient>) : Boolean {
 
-        println("checking for exact ingredients")
-        if(hasExactIngredients()) {
-            println("has exact ingredients")
+        calculateMatches(recipe)
+        if(hasIngredients()) {
             for(index in affectedStacks) {
-                inventory.setStackInSlot(index, copy1[index])
+                inventory.setStackInSlot(index, copy[index])
             }
             return true
         }
-
-        println("checking for inexact ingredients")
-        if(hasInexactIngredients()) {
-            println("has inexact ingredients")
-            for(index in affectedStacks) {
-                inventory.setStackInSlot(index, copy2[index])
-            }
-            return true
-        }
-        println("does not have inexact ingredients")
-
         return false
     }
 
 
-    private fun hasExactIngredients() : Boolean {
+    fun getMatches() = matches
 
-        for (stack in matrix.inventory) {
-            if(stack.isEmpty) continue
-            val index = copy1.indexOfFirst { stack.isItemEqual(it) }
-            if(index < 0) {
-                // no match, reset matched slots and return
-                println("does NOT contain exact ingredients")
-                affectedStacks.clear()
-                return false
-            }
-
-            println("found match for ${copy1[index].unlocalizedName}")
-            copy1[index].shrink(1)
-            if(!affectedStacks.contains(index)) {
-                affectedStacks.add(index)
-            }
+    fun hasIngredients() : Boolean {
+        if(matches.isEmpty()) return false
+        for(match in matches) {
+            if (!match) return false
         }
         return true
     }
 
+    fun clearMatches() {
+        matches = BooleanArray(0) {false}
+    }
 
-    private fun hasInexactIngredients() : Boolean {
 
-        var hasMatch = false
+    fun calculateMatches(recipe: List<Ingredient>) : BooleanArray {
+        copy = getInventoryClone()
+        matches = BooleanArray(recipe.size) {false}
         // iterate through each ingredient
-        recipe.forEach recipe@ { ingredient ->
+        for((index, ingredient) in recipe.withIndex()) {
+            if(ingredient == Ingredient.EMPTY) {
+                println("ingredient is empty, setting true match and continuing")
+                matches[index] = true
+                continue
+            }
             //println("checking ingredient")
             // iterate through inventory to find valid matches
-            for(i in 0 until copy2.size) {
-                val stack = copy2[i]
-                if(stack.isEmpty) continue // save some iteration steps if stack is empty
-
-                // iterate through possible valid replacements for ingredient
-                ingredient.matchingStacks.firstOrNull { it.isItemEqual(stack) }?.let {
-
-                    println("recipe item match: ${stack.displayName}")
-                    hasMatch = true
-                    val newItem = stack.copy()
-                    println("editing stack of ${stack.displayName} with count ${stack.count}")
-                    stack.shrink(1)
-                    if(!affectedStacks.contains(i)) {
-                        affectedStacks.add(i)
-                    }
-
-                    // if there is a match, replace item in grid with alternative
-                    matrix.inventory.forEachIndexed grid@ { j, gridStack ->
-                        // don't replace an item that's already been replaced
-                        if(affectedMatrixStacks.contains(j)) return@grid
-
-                        ingredient.matchingStacks.firstOrNull { it.isItemEqual(gridStack) }?.let {
-
-                            println("new item is ${newItem.displayName}")
-                            matrix.setInventorySlotContents(j, newItem)
-                            affectedMatrixStacks.add(j)
-                            return@recipe
-                        }
-                        gridStack.shrink(1)
-                    }
-                }
+            if(checkIngredientMatchInInventory(ingredient)) {
+                println("recipe item match at index $index")
+                matches[index] = true
+            } else {
+                println("no match found at index $index")
             }
         }
-        return hasMatch
+        return matches
     }
+
+    private fun checkIngredientMatchInInventory(ingredient: Ingredient) : Boolean {
+        // iterate through possible valid replacements for ingredient
+        for(i in 0 until copy.size) {
+            val stack = copy[i]
+            if (stack.isEmpty) continue
+
+            ingredient.matchingStacks.firstOrNull { it.isItemEqual(stack) }?.let {
+
+                stack.shrink(1)
+                if (!affectedStacks.contains(i)) {
+                    affectedStacks.add(i)
+                }
+                return true
+            }
+        }
+        return false
+    }
+
 
     private fun getInventoryClone() : ArrayList<ItemStack> {
         val inv = ArrayList<ItemStack>()

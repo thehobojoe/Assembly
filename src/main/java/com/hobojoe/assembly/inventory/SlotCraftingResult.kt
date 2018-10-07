@@ -18,6 +18,7 @@ class SlotCraftingResult(
         fun tookResult() : Boolean
     }
 
+    var isValid = false
     var craftListener: OnCraft? = null
 
     override fun onTake(thePlayer: EntityPlayer?, stack: ItemStack?): ItemStack? {
@@ -32,5 +33,9 @@ class SlotCraftingResult(
         }
 
         return stack
+    }
+
+    override fun canTakeStack(playerIn: EntityPlayer?): Boolean {
+        return isValid
     }
 }

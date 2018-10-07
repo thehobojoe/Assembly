@@ -1,19 +1,19 @@
 package com.hobojoe.assembly.assembler
 
 import com.hobojoe.assembly.inventory.InventoryCraftingMatrix
+import com.hobojoe.assembly.inventory.InventoryHandler
 import net.minecraft.inventory.InventoryCraftResult
 import net.minecraft.nbt.NBTTagCompound
 import net.minecraft.tileentity.TileEntity
 import net.minecraft.util.EnumFacing
 import net.minecraftforge.common.capabilities.Capability
 import net.minecraftforge.items.CapabilityItemHandler
-import net.minecraftforge.items.ItemStackHandler
 
 class TileEntityAssembler : TileEntity() {
 
     var craftMatrix = InventoryCraftingMatrix()
     var result = InventoryCraftResult()
-    var inventory = ItemStackHandler(27)
+    var inventory = InventoryHandler(27)
 
 
     override fun writeToNBT(compound: NBTTagCompound?): NBTTagCompound {

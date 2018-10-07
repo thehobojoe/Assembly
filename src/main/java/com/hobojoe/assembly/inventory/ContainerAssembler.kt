@@ -1,6 +1,5 @@
 package com.hobojoe.assembly.inventory
 
-import cofh.core.gui.slot.SlotFalseCopy
 import com.hobojoe.assembly.assembler.TileEntityAssembler
 import net.minecraft.entity.player.EntityPlayer
 import net.minecraft.inventory.ClickType
@@ -40,7 +39,7 @@ class ContainerAssembler(private val player: EntityPlayer, val assembler: TileEn
                 yBase = 13 - yOffset
                 val index = j + i * 3
                 print(index.toString() + ", ")
-                addSlotToContainer(SlotFalseCopy(craftMatrix, index, 62 + j * 18, yBase + i * 18))
+                addSlotToContainer(SlotGhost(craftMatrix, index, 62 + j * 18, yBase + i * 18))
             }
         }
 
@@ -99,7 +98,7 @@ class ContainerAssembler(private val player: EntityPlayer, val assembler: TileEn
     override fun slotClick(slotId: Int, dragType: Int, clickTypeIn: ClickType, player: EntityPlayer): ItemStack {
 
         val slot = if (slotId < 0) null else this.inventorySlots[slotId]
-        if (slot is SlotFalseCopy) {
+        if (slot is SlotGhost) {
             if (dragType == 2) {
                 slot.putStack(ItemStack.EMPTY)
             } else {
